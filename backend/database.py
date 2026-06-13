@@ -3,7 +3,14 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 import datetime
 
-DATABASE_URL = "postgresql://preetham@localhost/fraud_detection"
+import os
+
+# Use the environment variable if available (for production), otherwise fallback to local postgres
+DATABASE_URL = os.environ.get("DATABASE_URL", "postgresql://preetham@localhost/fraud_detection")
+
+# Cloud providers like Render sometimes provide URLs starting with postgres:// which SQLAlchemy 1.4+ does not support natively
+if DATABASE_URL.startswith("postgres://"):
+    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
 
 engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
