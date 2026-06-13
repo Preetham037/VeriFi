@@ -41,7 +41,17 @@ class ChatRequest(BaseModel):
     message: str
     transaction_id: Optional[int] = None
 
+from backend.seed import seed_database
+
 # Endpoints
+@app.post("/api/seed")
+def api_seed_database():
+    try:
+        seed_database()
+        return {"status": "Database successfully seeded! Refresh the page."}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 @app.get("/api/stats")
 def get_stats(db: Session = Depends(get_db)):
     total = db.query(TransactionPrediction).count()
