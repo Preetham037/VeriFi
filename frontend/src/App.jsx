@@ -34,7 +34,7 @@ import {
   Bar 
 } from 'recharts';
 
-const API_BASE = "http://localhost:8000/api";
+const API_BASE = "https://verifi-191i.onrender.com/api";
 
 // Custom inline Markdown parser
 const parseInline = (text) => {
