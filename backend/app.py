@@ -303,6 +303,10 @@ def chat(payload: ChatRequest, db: Session = Depends(get_db)):
         match = re.search(r'(?:transaction|txn|id|#)\s*(\d+)', msg)
         if match:
             txn_id = int(match.group(1))
+        else:
+            match = re.search(r'\b(\d+)\b', msg)
+            if match:
+                txn_id = int(match.group(1))
             
     # If a specific transaction ID is mentioned or provided
     if txn_id:
