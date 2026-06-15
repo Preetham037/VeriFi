@@ -152,6 +152,20 @@ function App() {
   });
   const [loading, setLoading] = useState(true);
   
+  // Animation State
+  const [animatingMetrics, setAnimatingMetrics] = useState(false);
+  const prevTxnsRef = useRef(0);
+
+  useEffect(() => {
+    if (stats.total_transactions > prevTxnsRef.current && prevTxnsRef.current !== 0) {
+      setAnimatingMetrics(true);
+      const timer = setTimeout(() => setAnimatingMetrics(false), 800);
+      prevTxnsRef.current = stats.total_transactions;
+      return () => clearTimeout(timer);
+    }
+    prevTxnsRef.current = stats.total_transactions;
+  }, [stats.total_transactions]);
+  
   // Prediction Form State
   const [predictForm, setPredictForm] = useState({
     amt: '120.00',
@@ -187,15 +201,19 @@ function App() {
         };
         
         try {
-          await fetch(`${API_BASE}/predict`, {
+          const res = await fetch(`${API_BASE}/predict`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
           });
+          if (res.ok) {
+            const data = await res.json();
+            setPredictResult(data);
+          }
         } catch (e) {
           console.error("Simulation error", e);
         }
-      }, 2500); // Send one every 2.5 seconds
+      }, 12000); // Send one every 12 seconds (5 per minute)
     } else if (simulationRef.current) {
       clearInterval(simulationRef.current);
     }
@@ -502,7 +520,7 @@ function App() {
 
             {/* Metrics cards grid */}
             <div className="metrics-grid">
-              <div className="metric-card total-txns">
+              <div className={`metric-card total-txns ${animatingMetrics ? 'metric-animate' : ''}`}>
                 <div className="metric-info">
                   <h3>Total Transactions</h3>
                   <div className="metric-value">{stats.total_transactions}</div>
@@ -512,7 +530,7 @@ function App() {
                 </div>
               </div>
               
-              <div className="metric-card fraud-cases">
+              <div className={`metric-card fraud-cases ${animatingMetrics ? 'metric-animate' : ''}`}>
                 <div className="metric-info">
                   <h3>Fraud Cases</h3>
                   <div className="metric-value">{stats.fraud_cases}</div>
@@ -522,7 +540,7 @@ function App() {
                 </div>
               </div>
 
-              <div className="metric-card accuracy">
+              <div className={`metric-card accuracy ${animatingMetrics ? 'metric-animate' : ''}`}>
                 <div className="metric-info">
                   <h3>Model Accuracy</h3>
                   <div className="metric-value">{stats.model_accuracy}%</div>
@@ -532,7 +550,7 @@ function App() {
                 </div>
               </div>
 
-              <div className="metric-card risk-score">
+              <div className={`metric-card risk-score ${animatingMetrics ? 'metric-animate' : ''}`}>
                 <div className="metric-info">
                   <h3>Avg Risk Score</h3>
                   <div className="metric-value">{stats.avg_risk_score}%</div>
