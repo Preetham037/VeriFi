@@ -37,8 +37,8 @@ def seed_database():
     international_p = 0.06
     
     for day_offset in range(7, -1, -1): # 7 days ago to today
-        # Number of transactions on this day
-        daily_count = random.randint(15, 25)
+        # Number of transactions on this day (increased to match simulator volume)
+        daily_count = random.randint(250, 400)
         
         for _ in range(daily_count):
             # Hour of transaction
