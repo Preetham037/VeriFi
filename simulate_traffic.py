@@ -4,11 +4,26 @@ import time
 from datetime import datetime
 
 # URL for your local backend API
-API_URL = "http://127.0.0.1:8000/api/predict"
+API_URL = "http://localhost:8000/api/predict"
+
+# Major global financial hubs (lat, lng)
+HUBS = [
+    (40.7128, -74.0060), # New York
+    (51.5074, -0.1278),  # London
+    (35.6762, 139.6503), # Tokyo
+    (19.0760, 72.8777),  # Mumbai
+    (1.3521, 103.8198),  # Singapore
+    (-33.8688, 151.2093) # Sydney
+]
 
 def generate_random_transaction():
     """Generates a somewhat realistic, randomized transaction payload."""
     
+    # Pick a random hub and add some jitter
+    hub_lat, hub_lng = random.choice(HUBS)
+    lat = hub_lat + random.uniform(-2.0, 2.0)
+    lng = hub_lng + random.uniform(-2.0, 2.0)
+
     # Decide if we want to simulate a potentially fraudulent transaction 
     # (High amount, long distance, international, high velocity)
     is_suspicious = random.random() < 0.15 # 15% chance to be highly suspicious
@@ -21,6 +36,9 @@ def generate_random_transaction():
         is_online = True
         is_international = random.choice([True, False])
         card_present = False
+        # Further randomize fraud locations
+        lat = lat + random.uniform(-10.0, 10.0)
+        lng = lng + random.uniform(-10.0, 10.0)
     else:
         amt = round(random.uniform(5, 150), 2)
         distance = round(random.uniform(0.5, 50), 2)
@@ -38,7 +56,9 @@ def generate_random_transaction():
         "hour": hour,
         "is_online": is_online,
         "is_international": is_international,
-        "card_present": card_present
+        "card_present": card_present,
+        "latitude": lat,
+        "longitude": lng
     }
 
 def simulate_traffic():

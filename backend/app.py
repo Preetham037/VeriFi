@@ -52,6 +52,8 @@ class TransactionCreate(BaseModel):
     is_online: bool
     is_international: bool
     card_present: bool
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
 
 class ChatRequest(BaseModel):
     message: str
@@ -120,6 +122,8 @@ def get_transactions(limit: int = 50, db: Session = Depends(get_db)):
             "is_online": t.is_online,
             "is_international": t.is_international,
             "card_present": t.card_present,
+            "latitude": t.latitude,
+            "longitude": t.longitude,
             "risk_score": t.risk_score,
             "is_fraud": t.is_fraud,
             "severity": t.severity,
@@ -143,6 +147,8 @@ def predict(payload: TransactionCreate, background_tasks: BackgroundTasks, db: S
             is_online=payload.is_online,
             is_international=payload.is_international,
             card_present=payload.card_present,
+            latitude=payload.latitude,
+            longitude=payload.longitude,
             risk_score=pred["risk_score"],
             is_fraud=pred["is_fraud"],
             severity=pred["severity"],

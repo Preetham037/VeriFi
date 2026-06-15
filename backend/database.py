@@ -31,6 +31,8 @@ class TransactionPrediction(Base):
     is_online = Column(Boolean, nullable=False)
     is_international = Column(Boolean, nullable=False)
     card_present = Column(Boolean, nullable=False)
+    latitude = Column(Float, nullable=True)
+    longitude = Column(Float, nullable=True)
     
     # Prediction details
     risk_score = Column(Float, nullable=False) # 0.0 to 1.0 probability

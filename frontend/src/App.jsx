@@ -17,9 +17,11 @@ import {
   ArrowRight,
   UserCheck,
   Compass,
-  Share2
+  Share2,
+  MapPin
 } from 'lucide-react';
 import NetworkGraph from './components/NetworkGraph';
+import GeoMap from './components/GeoMap';
 import { 
   ResponsiveContainer, 
   LineChart, 
@@ -505,6 +507,13 @@ function App() {
           >
             <Share2 className="nav-icon" />
             Link Analysis
+          </li>
+          <li 
+            className={`nav-item ${activePage === 'hotspot-map' ? 'active' : ''}`}
+            onClick={() => setActivePage('hotspot-map')}
+          >
+            <MapPin className="nav-icon" />
+            Hotspot Map
           </li>
         </ul>
         
@@ -1301,9 +1310,23 @@ function App() {
           </div>
         )}
 
+        {/* Hotspot Map View */}
+        {activePage === 'hotspot-map' && (
+          <div className="space-y-6 animate-fade-in h-full flex flex-col">
+            <header>
+              <h2 className="text-2xl font-bold text-white mb-2">Global Fraud Hotspots</h2>
+              <p className="text-gray-400">Real-time geospatial mapping of transactions. Red markers indicate detected fraud.</p>
+            </header>
+            
+            <div className="flex-1 bg-[#1A1C23] rounded-2xl p-6 border border-gray-800 shadow-xl overflow-hidden min-h-[600px]">
+              <GeoMap transactions={transactions} onAudit={auditTransaction} />
+            </div>
+          </div>
+        )}
+
       </main>
     </div>
   );
-}
+};
 
 export default App;
