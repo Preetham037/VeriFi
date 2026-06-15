@@ -183,9 +183,9 @@ function App() {
   const chatBottomRef = useRef(null);
 
   // Global Data Fetch
-  const fetchData = async () => {
+  const fetchData = async (isSilent = false) => {
     try {
-      setLoading(true);
+      if (!isSilent) setLoading(true);
       const [statsRes, txnsRes, analyticsRes] = await Promise.all([
         fetch(`${API_BASE}/stats`),
         fetch(`${API_BASE}/transactions`),
@@ -201,18 +201,24 @@ function App() {
       setAnalyticsData(analyticsVal);
       
       // Auto-select the first transaction for explainability if none selected
-      if (txnsVal.length > 0 && !selectedTxnId) {
-        setSelectedTxnId(txnsVal[0].id.toString());
-      }
+      setSelectedTxnId(prev => {
+        if (!prev && txnsVal.length > 0) return txnsVal[0].id.toString();
+        return prev;
+      });
     } catch (e) {
       console.error("Error loading data from API:", e);
     } finally {
-      setLoading(false);
+      if (!isSilent) setLoading(false);
     }
   };
 
   useEffect(() => {
     fetchData();
+    // Poll every 2.5 seconds for real-time live updates
+    const intervalId = setInterval(() => {
+      fetchData(true);
+    }, 2500);
+    return () => clearInterval(intervalId);
   }, []);
 
   // Sync scroll for chat window
