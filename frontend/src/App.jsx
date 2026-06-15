@@ -36,7 +36,10 @@ import {
   Bar 
 } from 'recharts';
 
-const API_BASE = "https://verifi-191i.onrender.com/api";
+// Auto-detect if running locally vs production
+const API_BASE = window.location.hostname === 'localhost' 
+  ? "http://localhost:8000/api" 
+  : "https://verifi-191i.onrender.com/api";
 
 // Custom inline Markdown parser
 const parseInline = (text) => {
