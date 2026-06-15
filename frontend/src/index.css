@@ -1051,3 +1051,63 @@ h1, h2, h3, h4, h5, h6 {
   text-decoration-color: var(--primary);
   text-underline-offset: 4px;
 }
+
+/* Leaflet Dark Theme Overrides */
+.leaflet-popup-content-wrapper, .leaflet-popup-tip {
+  background: var(--bg-card) !important;
+  backdrop-filter: blur(16px) !important;
+  border: 1px solid var(--border-color) !important;
+  color: var(--text-primary) !important;
+  box-shadow: var(--shadow-glow) !important;
+}
+
+.leaflet-popup-content {
+  margin: 0 !important;
+}
+
+.leaflet-container a.leaflet-popup-close-button {
+  color: var(--text-secondary) !important;
+  padding: 8px !important;
+}
+
+.leaflet-container a.leaflet-popup-close-button:hover {
+  color: var(--text-primary) !important;
+}
+
+/* Custom Popup Content Styling */
+.custom-popup-content {
+  padding: 16px;
+  min-width: 200px;
+}
+
+.custom-popup-title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 16px;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.custom-popup-title.fraud {
+  color: var(--danger);
+}
+
+.custom-popup-title.normal {
+  color: var(--primary);
+}
+
+.custom-popup-text {
+  font-family: var(--font-body);
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin-bottom: 4px;
+}
+
+.custom-popup-btn {
+  margin-top: 16px;
+  width: 100%;
+  padding: 8px 12px;
+  font-size: 13px;
+}

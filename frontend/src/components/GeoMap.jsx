@@ -34,21 +34,21 @@ const GeoMap = ({ transactions, onAudit }) => {
               opacity={0.8}
               fillOpacity={isFraud ? 0.8 : 0.5}
             >
-              <Popup className="bg-[#1A1C23] border border-gray-700 text-white !rounded-lg !p-0">
-                <div className="p-3">
-                  <h3 className={`font-bold mb-1 ${isFraud ? 'text-red-400' : 'text-emerald-400'}`}>
+              <Popup className="custom-leaflet-popup">
+                <div className="custom-popup-content">
+                  <h3 className={`custom-popup-title ${isFraud ? 'fraud' : 'normal'}`}>
                     {isFraud ? '⚠️ Fraud Detected' : '✅ Normal Transaction'}
                   </h3>
-                  <p className="text-sm text-gray-300">Amount: ₹{txn.amt}</p>
-                  <p className="text-sm text-gray-300">Distance: {txn.distance} km</p>
-                  <p className="text-sm text-gray-300">Time: {new Date(txn.timestamp).toLocaleTimeString()}</p>
+                  <p className="custom-popup-text">Amount: ₹{txn.amt}</p>
+                  <p className="custom-popup-text">Distance: {txn.distance} km</p>
+                  <p className="custom-popup-text">Time: {new Date(txn.timestamp).toLocaleTimeString()}</p>
                   
                   <button 
                     onClick={(e) => {
                       e.stopPropagation();
                       onAudit(txn.id);
                     }}
-                    className="mt-3 w-full bg-blue-500 hover:bg-blue-600 text-white text-xs font-semibold py-1.5 px-3 rounded-md transition-colors"
+                    className="btn-primary custom-popup-btn"
                   >
                     Investigate with AI
                   </button>

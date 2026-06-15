@@ -21,8 +21,9 @@ def generate_random_transaction():
     
     # Pick a random hub and add some jitter
     hub_lat, hub_lng = random.choice(HUBS)
-    lat = hub_lat + random.uniform(-2.0, 2.0)
-    lng = hub_lng + random.uniform(-2.0, 2.0)
+    # Tightened from +/- 2.0 to +/- 0.05 to ensure they stay on land near the cities
+    lat = hub_lat + random.uniform(-0.05, 0.05)
+    lng = hub_lng + random.uniform(-0.05, 0.05)
 
     # Decide if we want to simulate a potentially fraudulent transaction 
     # (High amount, long distance, international, high velocity)
@@ -36,9 +37,9 @@ def generate_random_transaction():
         is_online = True
         is_international = random.choice([True, False])
         card_present = False
-        # Further randomize fraud locations
-        lat = lat + random.uniform(-10.0, 10.0)
-        lng = lng + random.uniform(-10.0, 10.0)
+        # Further randomize fraud locations, but keep it tight
+        lat = lat + random.uniform(-0.1, 0.1)
+        lng = lng + random.uniform(-0.1, 0.1)
     else:
         amt = round(random.uniform(5, 150), 2)
         distance = round(random.uniform(0.5, 50), 2)
