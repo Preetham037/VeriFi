@@ -373,8 +373,8 @@ def chat(request: Request, payload: ChatRequest, db: Session = Depends(get_db)):
     prompt += f"User message: {msg}"
     
     try:
-        # Fallback to gemini-pro if 1.5 is unavailable
-        model = genai.GenerativeModel('gemini-pro')
+        # Use the latest available flash model
+        model = genai.GenerativeModel('gemini-flash-latest')
         response = model.generate_content([system_instruction, prompt])
         reply = response.text
     except Exception as e:
