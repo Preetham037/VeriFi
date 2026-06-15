@@ -234,7 +234,7 @@ function App() {
   const [chatMessages, setChatMessages] = useState([
     {
       sender: 'assistant',
-      text: '### 👋 Welcome to the AI Investigator Console!\n\nI am your forensic co-pilot. I can audit transaction histories, outline anomaly vectors, and break down ML classifier outputs.\n\n**To audit a specific transaction, type something like:**\n- *"Explain transaction #15"* (or click "Investigate" next to any entry in the log).'
+      text: '### 👋 Welcome to the VeriFi AI Investigator!\n\nI am your intelligent forensic co-pilot powered by Gemini. I can answer questions about fraud detection, audit transaction anomalies, and explain security risk models.\n\n**How can I assist your investigation today?**\n- *"What are the most important features in detecting fraud?"*\n- *"Explain why transaction #15 was flagged."*\n- *"How do card-not-present attacks usually work?"*'
     }
   ]);
   const [chatLoading, setChatLoading] = useState(false);
@@ -833,7 +833,7 @@ function App() {
                     </div>
                   </div>
 
-                  <div style={{ display: 'flex', gap: '12px' }}>
+                  <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
                     <button type="submit" className="btn-primary" disabled={predictLoading || isSimulating} style={{ flex: 1 }}>
                       {predictLoading ? "Scoring..." : (
                         <>
@@ -841,6 +841,27 @@ function App() {
                           <ArrowRight size={18} />
                         </>
                       )}
+                    </button>
+
+                    <button 
+                      type="button" 
+                      className="nav-item"
+                      style={{ padding: '0 20px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.1)', cursor: 'pointer', backgroundColor: 'rgba(255,255,255,0.02)' }}
+                      onClick={() => {
+                        const isSuspicious = Math.random() < 0.3;
+                        setPredictForm({
+                          amt: isSuspicious ? (Math.random() * 4500 + 500).toFixed(2) : (Math.random() * 145 + 5).toFixed(2),
+                          distance: isSuspicious ? (Math.random() * 4900 + 100).toFixed(2) : (Math.random() * 49.5 + 0.5).toFixed(2),
+                          txn_velocity: isSuspicious ? Math.floor(Math.random() * 16) + 5 : Math.floor(Math.random() * 4),
+                          age: Math.floor(Math.random() * 63) + 18,
+                          hour: isSuspicious ? [0, 1, 2, 3, 4, 5][Math.floor(Math.random() * 6)] : Math.floor(Math.random() * 18) + 6,
+                          is_online: isSuspicious,
+                          is_international: isSuspicious ? Math.random() > 0.5 : false,
+                          card_present: !isSuspicious
+                        });
+                      }}
+                    >
+                      Generate Random
                     </button>
                     
                     <button 
