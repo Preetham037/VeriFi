@@ -6,11 +6,17 @@ from sqlalchemy import func, desc, Integer
 import json
 import datetime
 import os
+import re
 from typing import List, Optional
 import google.generativeai as genai
 from dotenv import load_dotenv
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
+from fastapi import Request
 
 load_dotenv()
+limiter = Limiter(key_func=get_remote_address)
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 if GEMINI_API_KEY:
     genai.configure(api_key=GEMINI_API_KEY)
@@ -19,6 +25,8 @@ from backend.database import get_db, init_db, TransactionPrediction, SessionLoca
 from backend.model_utils import predict_transaction, predict_transaction_fast, explain_transaction_slow, feature_names
 
 app = FastAPI(title="VerFi Fraud Detection Platform API")
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 # Enable CORS for React Frontend
 app.add_middleware(
@@ -301,8 +309,13 @@ def get_analytics(db: Session = Depends(get_db)):
     }
 
 @app.post("/api/chat")
-def chat(payload: ChatRequest, db: Session = Depends(get_db)):
+@limiter.limit("5/minute")
+def chat(request: Request, payload: ChatRequest, db: Session = Depends(get_db)):
     msg = payload.message.strip()
+    
+    # Simple PII Redaction (Mask 16 digit numbers and SSN-like patterns)
+    msg = re.sub(r'\b(?:\d[ -]*?){13,16}\b', '[REDACTED CARD NUMBER]', msg)
+    msg = re.sub(r'\b\d{3}-\d{2}-\d{4}\b', '[REDACTED SSN]', msg)
     
     if not GEMINI_API_KEY:
         return {
@@ -343,22 +356,35 @@ def chat(payload: ChatRequest, db: Session = Depends(get_db)):
                 f"- Model Explanation: {ai_exp}\n"
             )
             
-    prompt = (
-        "You are the VeriFi AI Investigator, a forensic co-pilot specializing in fraud detection and banking security. "
-        "Your job is to answer the user's questions conversationally, analyze transaction patterns, and explain ML outputs clearly. "
-        "Use markdown formatting like bold text and bullet points for readability. "
-        "Do NOT output large raw data tables unless specifically requested.\n\n"
+    # Use System Instruction to guard against hallucination and restrict domain
+    system_instruction = (
+        "You are the VeriFi AI Investigator, a strict and analytical forensic co-pilot specializing in fraud detection. "
+        "Your job is to answer questions conversationally, analyze transactions, and explain ML outputs. "
+        "RULES:\n"
+        "1. ONLY answer questions related to fraud, security, banking, or this specific transaction. If asked about unrelated topics, politely decline.\n"
+        "2. DO NOT invent or hallucinate transaction details. Only use the context provided.\n"
+        "3. Use markdown formatting like bold text and bullet points for readability."
     )
+    
+    prompt = ""
     if txn_context:
-        prompt += f"The user may be asking about this specific transaction. Here is the relevant context:\n{txn_context}\n\n"
+        prompt += f"CONTEXT DATA:\n{txn_context}\n\n"
     
     prompt += f"User message: {msg}"
     
     try:
-        model = genai.GenerativeModel('gemini-1.5-flash')
-        response = model.generate_content(prompt)
+        # Fallback to gemini-pro if 1.5 is unavailable
+        model = genai.GenerativeModel('gemini-pro')
+        response = model.generate_content([system_instruction, prompt])
         reply = response.text
     except Exception as e:
-        reply = f"### ❌ Error communicating with AI API\n\n```\n{str(e)}\n```"
+        # Graceful error handling
+        error_msg = str(e)
+        if "404" in error_msg or "not found" in error_msg.lower():
+            reply = "### ❌ Model Not Available\nThe requested Gemini model is not available for this API key or region. Please ensure your API key has access to standard models."
+        elif "quota" in error_msg.lower() or "429" in error_msg:
+            reply = "### ⏳ AI Quota Exceeded\nThe AI API quota has been exceeded. Please wait a moment and try again."
+        else:
+            reply = f"### ❌ Error communicating with AI API\n\n```\n{error_msg}\n```"
 
     return {"response": reply, "transaction_id": txn_id}

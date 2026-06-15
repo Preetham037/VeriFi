@@ -16,8 +16,10 @@ import {
   Search,
   ArrowRight,
   UserCheck,
-  Compass
+  Compass,
+  Share2
 } from 'lucide-react';
+import NetworkGraph from './components/NetworkGraph';
 import { 
   ResponsiveContainer, 
   LineChart, 
@@ -493,6 +495,13 @@ function App() {
           >
             <MessageSquare className="nav-icon" />
             AI Investigator
+          </li>
+          <li 
+            className={`nav-item ${activePage === 'link-analysis' ? 'active' : ''}`}
+            onClick={() => setActivePage('link-analysis')}
+          >
+            <Share2 className="nav-icon" />
+            Link Analysis
           </li>
         </ul>
         
@@ -1251,6 +1260,19 @@ function App() {
                   <Send size={18} />
                 </button>
               </form>
+            </div>
+          </div>
+        )}
+
+        {/* PAGE: LINK ANALYSIS */}
+        {activePage === 'link-analysis' && (
+          <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+            <div className="page-header">
+              <h1 className="page-title">Link Analysis Graphs</h1>
+              <p className="page-subtitle">Visualize entity resolution and interconnected fraud rings using force-directed graphs.</p>
+            </div>
+            <div style={{ flexGrow: 1, paddingBottom: 20 }}>
+              <NetworkGraph transactions={transactions} />
             </div>
           </div>
         )}

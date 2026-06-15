@@ -10,3 +10,4 @@ nbformat
 ipykernel
 google-generativeai
 python-dotenv
+slowapi
