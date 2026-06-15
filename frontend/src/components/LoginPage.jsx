@@ -54,42 +54,43 @@ const LoginPage = ({ API_BASE }) => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#0B0C10] text-white p-4">
-      <div className="max-w-md w-full bg-[#11131A] p-8 rounded-2xl shadow-2xl border border-gray-800">
-        <div className="flex justify-center mb-6">
-          <div className="h-16 w-16 bg-blue-500/20 rounded-2xl flex items-center justify-center border border-blue-500/30">
-            <ShieldCheck size={32} className="text-blue-400" />
+    <div className="login-container">
+      <div className="login-card">
+        <div className="login-logo-wrapper">
+          <div className="login-logo">
+            <ShieldCheck size={36} color="var(--primary)" />
           </div>
         </div>
-        <h2 className="text-3xl font-bold text-center mb-2">VeriFi Platform</h2>
-        <p className="text-center text-gray-400 mb-8">
+        
+        <h2 className="login-title">VeriFi Platform</h2>
+        <p className="login-subtitle">
           {isLogin ? 'Sign in to access your dashboard' : 'Register a new analyst account'}
         </p>
 
         {error && (
-          <div className="bg-red-500/10 border border-red-500/50 text-red-400 p-3 rounded-lg text-sm mb-6 text-center">
+          <div className="login-error">
             {error}
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-5">
-          <div>
-            <label className="block text-sm font-medium text-gray-400 mb-1">Username</label>
+        <form onSubmit={handleSubmit} className="login-form">
+          <div className="form-group">
+            <label>Username</label>
             <input
               type="text"
               required
-              className="w-full bg-[#1A1C23] border border-gray-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors"
+              className="form-input"
               placeholder="admin"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
             />
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-400 mb-1">Password</label>
+          <div className="form-group">
+            <label>Password</label>
             <input
               type="password"
               required
-              className="w-full bg-[#1A1C23] border border-gray-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors"
+              className="form-input"
               placeholder="••••••••"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -98,16 +99,18 @@ const LoginPage = ({ API_BASE }) => {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition-colors disabled:opacity-50"
+            className="btn-primary"
+            style={{ marginTop: '20px' }}
           >
             {loading ? 'Processing...' : isLogin ? <><LogIn size={18}/> Sign In</> : <><UserPlus size={18}/> Create Account</>}
           </button>
         </form>
 
-        <div className="mt-6 text-center">
+        <div className="login-footer">
           <button
+            type="button"
             onClick={() => { setIsLogin(!isLogin); setError(''); }}
-            className="text-sm text-blue-400 hover:text-blue-300 transition-colors"
+            className="login-toggle-btn"
           >
             {isLogin ? "Don't have an account? Register" : 'Already have an account? Sign in'}
           </button>
