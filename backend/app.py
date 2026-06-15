@@ -326,7 +326,7 @@ def chat(request: Request, payload: ChatRequest, db: Session = Depends(get_db)):
     # 1. Search for ID mentions, e.g. "transaction 12" or "txn #12" or just a number
     txn_id = payload.transaction_id
     if not txn_id:
-        import re
+        
         match = re.search(r'(?:transaction|txn|id|#)\s*(\d+)', msg.lower())
         if match:
             txn_id = int(match.group(1))
