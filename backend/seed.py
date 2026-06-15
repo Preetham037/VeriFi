@@ -90,6 +90,19 @@ def seed_database():
                 is_online = 1
                 card_present = 0
                 
+            # Geo-coordinates
+            HUBS = [
+                (40.7128, -74.0060), # New York
+                (51.5074, -0.1278),  # London
+                (35.6762, 139.6503), # Tokyo
+                (19.0760, 72.8777),  # Mumbai
+                (1.3521, 103.8198),  # Singapore
+                (-33.8688, 151.2093) # Sydney
+            ]
+            hub_lat, hub_lng = random.choice(HUBS)
+            lat = hub_lat + random.uniform(-0.05, 0.05)
+            lng = hub_lng + random.uniform(-0.05, 0.05)
+                
             features = {
                 "amt": amt,
                 "distance": distance,
@@ -98,7 +111,9 @@ def seed_database():
                 "hour": hour,
                 "is_online": is_online,
                 "is_international": is_international,
-                "card_present": card_present
+                "card_present": card_present,
+                "latitude": lat,
+                "longitude": lng
             }
             
             # Get model prediction
@@ -114,6 +129,8 @@ def seed_database():
                 is_online=bool(is_online),
                 is_international=bool(is_international),
                 card_present=bool(card_present),
+                latitude=lat,
+                longitude=lng,
                 risk_score=pred["risk_score"],
                 is_fraud=pred["is_fraud"],
                 severity=pred["severity"],
