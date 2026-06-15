@@ -18,10 +18,13 @@ import {
   UserCheck,
   Compass,
   Share2,
-  MapPin
+  MapPin,
+  LogOut
 } from 'lucide-react';
 import NetworkGraph from './components/NetworkGraph';
 import GeoMap from './components/GeoMap';
+import LoginPage from './components/LoginPage';
+import { useAuth } from './context/AuthContext';
 import { 
   ResponsiveContainer, 
   LineChart, 
@@ -141,6 +144,17 @@ const renderMarkdown = (text) => {
 };
 
 function App() {
+  const { user, logout } = useAuth();
+  
+  if (!user) {
+    return <LoginPage API_BASE={API_BASE} />;
+  }
+
+  const authFetch = (url, options = {}) => {
+    const headers = { ...options.headers, 'Authorization': `Bearer ${user.token}` };
+    return fetch(url, { ...options, headers });
+  };
+
   const [activePage, setActivePage] = useState('dashboard');
   
   // Data States
@@ -208,7 +222,7 @@ function App() {
         };
         
         try {
-          const res = await fetch(`${API_BASE}/predict`, {
+          const res = await authFetch(`${API_BASE}/predict`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
@@ -250,9 +264,9 @@ function App() {
     try {
       if (!isSilent) setLoading(true);
       const [statsRes, txnsRes, analyticsRes] = await Promise.all([
-        fetch(`${API_BASE}/stats`),
-        fetch(`${API_BASE}/transactions`),
-        fetch(`${API_BASE}/analytics`)
+        authFetch(`${API_BASE}/stats`),
+        authFetch(`${API_BASE}/transactions`),
+        authFetch(`${API_BASE}/analytics`)
       ]);
       
       const statsVal = await statsRes.json();
@@ -296,7 +310,7 @@ function App() {
     const fetchExplanation = async () => {
       try {
         setExplainLoading(true);
-        const res = await fetch(`${API_BASE}/explain/${selectedTxnId}`);
+        const res = await authFetch(`${API_BASE}/explain/${selectedTxnId}`);
         if (res.ok) {
           const data = await res.json();
           setExplainResult(data);
@@ -317,7 +331,7 @@ function App() {
 
     const intervalId = setInterval(async () => {
       try {
-        const res = await fetch(`${API_BASE}/explain/${predictResult.id}`);
+        const res = await authFetch(`${API_BASE}/explain/${predictResult.id}`);
         if (res.ok) {
           const data = await res.json();
           if (data.status === 'completed') {
@@ -342,7 +356,7 @@ function App() {
 
     const intervalId = setInterval(async () => {
       try {
-        const res = await fetch(`${API_BASE}/explain/${explainResult.id}`);
+        const res = await authFetch(`${API_BASE}/explain/${explainResult.id}`);
         if (res.ok) {
           const data = await res.json();
           if (data.status === 'completed') {
@@ -376,7 +390,7 @@ function App() {
         is_international: predictForm.is_international,
         card_present: predictForm.card_present
       };
-      const res = await fetch(`${API_BASE}/predict`, {
+      const res = await authFetch(`${API_BASE}/predict`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
@@ -407,7 +421,7 @@ function App() {
     
     try {
       setChatLoading(true);
-      const res = await fetch(`${API_BASE}/chat`, {
+      const res = await authFetch(`${API_BASE}/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ message: queryText })
@@ -519,11 +533,14 @@ function App() {
         
         <div className="sidebar-footer">
           <div className="user-profile">
-            <div className="avatar">SO</div>
+            <div className="avatar">{user.username.substring(0, 2).toUpperCase()}</div>
             <div className="user-info">
-              <div className="username">SecOps Manager</div>
-              <div className="role">Tier 3 Analyst</div>
+              <div className="username" style={{ textTransform: 'capitalize' }}>{user.username}</div>
+              <div className="role">{user.role === 'admin' ? 'Administrator' : 'Analyst'}</div>
             </div>
+            <button onClick={logout} className="ml-auto text-gray-400 hover:text-white transition-colors" title="Logout">
+              <LogOut size={18} />
+            </button>
           </div>
         </div>
       </aside>
@@ -846,7 +863,7 @@ function App() {
                   </div>
 
                   <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-                    <button type="submit" className="btn-primary" disabled={predictLoading || isSimulating} style={{ flex: 1 }}>
+                    <button type="submit" className="btn-primary" disabled={predictLoading || isSimulating || user.role !== 'admin'} title={user.role !== 'admin' ? 'Admins only' : ''} style={{ flex: 1, opacity: user.role !== 'admin' ? 0.5 : 1 }}>
                       {predictLoading ? "Scoring..." : (
                         <>
                           Predict Transaction Risk

@@ -21,8 +21,14 @@ GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 if GEMINI_API_KEY:
     genai.configure(api_key=GEMINI_API_KEY)
 
-from backend.database import get_db, init_db, TransactionPrediction, SessionLocal
+from backend.database import get_db, init_db, TransactionPrediction, User, SessionLocal
 from backend.model_utils import predict_transaction, predict_transaction_fast, explain_transaction_slow, feature_names
+from backend.auth import (
+    Token, get_password_hash, verify_password, create_access_token, 
+    ACCESS_TOKEN_EXPIRE_MINUTES, get_current_user, get_current_active_admin
+)
+from fastapi.security import OAuth2PasswordRequestForm
+from datetime import timedelta
 
 app = FastAPI(title="VerFi Fraud Detection Platform API")
 app.state.limiter = limiter
@@ -41,6 +47,17 @@ app.add_middleware(
 @app.on_event("startup")
 def startup_event():
     init_db()
+    
+    # Create default admin
+    db = SessionLocal()
+    try:
+        admin = db.query(User).filter(User.username == "admin").first()
+        if not admin:
+            hashed = get_password_hash("admin123")
+            db.add(User(username="admin", hashed_password=hashed, role="admin"))
+            db.commit()
+    finally:
+        db.close()
 
 # Pydantic Schemas
 class TransactionCreate(BaseModel):
@@ -59,11 +76,50 @@ class ChatRequest(BaseModel):
     message: str
     transaction_id: Optional[int] = None
 
+class UserCreate(BaseModel):
+    username: str
+    password: str
+
 from backend.seed import seed_database
+
+# Auth Endpoints
+@app.post("/api/auth/register", response_model=Token)
+def register(user: UserCreate, db: Session = Depends(get_db)):
+    db_user = db.query(User).filter(User.username == user.username).first()
+    if db_user:
+        raise HTTPException(status_code=400, detail="Username already registered")
+    
+    hashed_password = get_password_hash(user.password)
+    # New users are 'analyst' by default
+    new_user = User(username=user.username, hashed_password=hashed_password, role="analyst")
+    db.add(new_user)
+    db.commit()
+    db.refresh(new_user)
+    
+    access_token = create_access_token(
+        data={"sub": new_user.username, "role": new_user.role},
+        expires_delta=timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    )
+    return {"access_token": access_token, "token_type": "bearer", "username": new_user.username, "role": new_user.role}
+
+@app.post("/api/auth/login", response_model=Token)
+def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.username == form_data.username).first()
+    if not user or not verify_password(form_data.password, user.hashed_password):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect username or password",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    access_token = create_access_token(
+        data={"sub": user.username, "role": user.role},
+        expires_delta=timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    )
+    return {"access_token": access_token, "token_type": "bearer", "username": user.username, "role": user.role}
 
 # Endpoints
 @app.post("/api/seed")
-def api_seed_database():
+def api_seed_database(current_user: User = Depends(get_current_active_admin)):
     try:
         seed_database()
         return {"status": "Database successfully seeded! Refresh the page."}
@@ -71,7 +127,7 @@ def api_seed_database():
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/api/stats")
-def get_stats(db: Session = Depends(get_db)):
+def get_stats(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     total = db.query(TransactionPrediction).count()
     if total == 0:
         return {
@@ -107,7 +163,7 @@ def generate_explanation_task(txn_id: int, features: dict):
         db.close()
 
 @app.get("/api/transactions")
-def get_transactions(limit: int = 50, db: Session = Depends(get_db)):
+def get_transactions(limit: int = 50, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     txns = db.query(TransactionPrediction).order_by(desc(TransactionPrediction.timestamp)).limit(limit).all()
     result = []
     for t in txns:
@@ -132,7 +188,7 @@ def get_transactions(limit: int = 50, db: Session = Depends(get_db)):
     return result
 
 @app.post("/api/predict")
-def predict(payload: TransactionCreate, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
+def predict(payload: TransactionCreate, background_tasks: BackgroundTasks, db: Session = Depends(get_db), admin: User = Depends(get_current_active_admin)):
     features = payload.dict()
     try:
         # Fast model inference (<5ms)
@@ -235,8 +291,8 @@ def get_explain(txn_id: int, db: Session = Depends(get_db)):
     }
 
 @app.get("/api/analytics")
-def get_analytics(db: Session = Depends(get_db)):
-    # 1. Fraud vs Genuine distribution
+def get_analytics(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    """Provides aggregated analytics data for charts"""
     fraud_counts = db.query(TransactionPrediction.is_fraud, func.count(TransactionPrediction.id)).group_by(TransactionPrediction.is_fraud).all()
     distribution = {"Genuine": 0, "Fraud": 0}
     for is_f, count in fraud_counts:
@@ -315,8 +371,9 @@ def get_analytics(db: Session = Depends(get_db)):
     }
 
 @app.post("/api/chat")
-@limiter.limit("5/minute")
-def chat(request: Request, payload: ChatRequest, db: Session = Depends(get_db)):
+@limiter.limit("15/minute")
+def chat(request: Request, payload: ChatRequest, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    """AI Investigator endpoint using Gemini API."""
     msg = payload.message.strip()
     
     # Simple PII Redaction (Mask 16 digit numbers and SSN-like patterns)

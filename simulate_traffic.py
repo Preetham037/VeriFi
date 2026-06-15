@@ -65,6 +65,18 @@ def simulate_traffic():
     print(f"🚀 Starting continuous payment gateway simulation at {API_URL}...")
     print("Press Ctrl+C to stop.\n")
     
+    # Authenticate as admin
+    auth_url = "http://localhost:8000/api/auth/login" if API_URL.startswith("http://localhost") else "https://verifi-191i.onrender.com/api/auth/login"
+    try:
+        auth_res = requests.post(auth_url, data={"username": "admin", "password": "admin123"})
+        auth_res.raise_for_status()
+        token = auth_res.json()["access_token"]
+        headers = {"Authorization": f"Bearer {token}"}
+        print("✅ Authenticated as admin successfully.\n")
+    except Exception as e:
+        print(f"❌ Failed to authenticate as admin. Ensure the backend is running and the admin user exists. Error: {e}")
+        return
+
     count = 0
     try:
         while True:
@@ -73,7 +85,7 @@ def simulate_traffic():
             print(f"[{datetime.now().strftime('%H:%M:%S')}] Sending transaction #{count}: ₹{payload['amt']} (Online: {payload['is_online']})")
             
             try:
-                response = requests.post(API_URL, json=payload)
+                response = requests.post(API_URL, json=payload, headers=headers)
                 if response.status_code == 200:
                     data = response.json()
                     status = "🔴 FRAUDULENT" if data.get("is_fraud") else "🟢 GENUINE"
