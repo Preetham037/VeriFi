@@ -166,6 +166,44 @@ function App() {
   const [predictResult, setPredictResult] = useState(null);
   const [predictLoading, setPredictLoading] = useState(false);
   
+  // Continuous Simulation State
+  const [isSimulating, setIsSimulating] = useState(false);
+  const simulationRef = useRef(null);
+
+  useEffect(() => {
+    if (isSimulating) {
+      simulationRef.current = setInterval(async () => {
+        const isSuspicious = Math.random() < 0.15;
+        const isOnline = isSuspicious ? true : Math.random() > 0.5;
+        const payload = {
+          amt: isSuspicious ? parseFloat((Math.random() * 4500 + 500).toFixed(2)) : parseFloat((Math.random() * 145 + 5).toFixed(2)),
+          distance: isSuspicious ? parseFloat((Math.random() * 4900 + 100).toFixed(2)) : parseFloat((Math.random() * 49.5 + 0.5).toFixed(2)),
+          txn_velocity: isSuspicious ? Math.floor(Math.random() * 16) + 5 : Math.floor(Math.random() * 4),
+          age: Math.floor(Math.random() * 63) + 18,
+          hour: isSuspicious ? [0, 1, 2, 3, 4, 5][Math.floor(Math.random() * 6)] : Math.floor(Math.random() * 18) + 6,
+          is_online: isOnline,
+          is_international: isSuspicious ? Math.random() > 0.5 : false,
+          card_present: !isOnline
+        };
+        
+        try {
+          await fetch(`${API_BASE}/predict`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+        } catch (e) {
+          console.error("Simulation error", e);
+        }
+      }, 2500); // Send one every 2.5 seconds
+    } else if (simulationRef.current) {
+      clearInterval(simulationRef.current);
+    }
+    return () => {
+      if (simulationRef.current) clearInterval(simulationRef.current);
+    };
+  }, [isSimulating]);
+  
   // Explainability State
   const [selectedTxnId, setSelectedTxnId] = useState('');
   const [explainResult, setExplainResult] = useState(null);
@@ -768,14 +806,29 @@ function App() {
                     </div>
                   </div>
 
-                  <button type="submit" className="btn-primary" disabled={predictLoading}>
-                    {predictLoading ? "Scoring..." : (
-                      <>
-                        Predict Transaction Risk
-                        <ArrowRight size={18} />
-                      </>
-                    )}
-                  </button>
+                  <div style={{ display: 'flex', gap: '12px' }}>
+                    <button type="submit" className="btn-primary" disabled={predictLoading || isSimulating} style={{ flex: 1 }}>
+                      {predictLoading ? "Scoring..." : (
+                        <>
+                          Predict Transaction Risk
+                          <ArrowRight size={18} />
+                        </>
+                      )}
+                    </button>
+                    
+                    <button 
+                      type="button" 
+                      onClick={() => setIsSimulating(!isSimulating)}
+                      className={`btn-primary ${isSimulating ? 'simulating' : ''}`}
+                      style={{ 
+                        flex: 1, 
+                        backgroundColor: isSimulating ? 'var(--danger)' : '#3B82F6',
+                        borderColor: isSimulating ? 'var(--danger)' : '#3B82F6'
+                      }}
+                    >
+                      {isSimulating ? "Stop Simulation" : "Start Continuous Flow"}
+                    </button>
+                  </div>
                 </form>
               </div>
 
