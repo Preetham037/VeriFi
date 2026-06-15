@@ -8,3 +8,5 @@ scikit-learn
 shap
 nbformat
 ipykernel
+google-generativeai
+python-dotenv
