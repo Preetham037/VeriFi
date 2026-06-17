@@ -53,6 +53,13 @@ class TransactionPrediction(Base):
 
 def init_db():
     Base.metadata.create_all(bind=engine)
+    try:
+        with engine.begin() as conn:
+            from sqlalchemy import text
+            conn.execute(text("ALTER TABLE transaction_predictions ADD COLUMN latitude FLOAT;"))
+            conn.execute(text("ALTER TABLE transaction_predictions ADD COLUMN longitude FLOAT;"))
+    except Exception as e:
+        pass # Columns probably already exist
 
 def get_db():
     db = SessionLocal()
