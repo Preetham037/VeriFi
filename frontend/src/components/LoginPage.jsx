@@ -28,7 +28,12 @@ const LoginPage = ({ API_BASE }) => {
           body: formData,
         });
 
-        if (!res.ok) throw new Error('Invalid credentials');
+        if (res.status === 404) {
+          throw new Error("Backend not updated. Please deploy the latest commit on Render.");
+        }
+        if (!res.ok) {
+          throw new Error('Invalid credentials');
+        }
         const data = await res.json();
         login(data.access_token, data.username, data.role);
       } else {
@@ -39,6 +44,9 @@ const LoginPage = ({ API_BASE }) => {
           body: JSON.stringify({ username, password }),
         });
 
+        if (res.status === 404) {
+          throw new Error("Backend not updated. Please deploy the latest commit on Render.");
+        }
         if (!res.ok) {
           const err = await res.json();
           throw new Error(err.detail || 'Registration failed');
