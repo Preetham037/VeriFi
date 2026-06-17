@@ -203,7 +203,26 @@ function App() {
   
   // Continuous Simulation State
   const [isSimulating, setIsSimulating] = useState(false);
+  const [isSeeding, setIsSeeding] = useState(false);
   const simulationRef = useRef(null);
+  
+  const handleSeed = async () => {
+    setIsSeeding(true);
+    try {
+      const res = await authFetch(`${API_BASE}/seed`, { method: 'POST' });
+      if (res.ok) {
+        alert("Database successfully seeded! Refreshing data...");
+        fetchData();
+      } else {
+        const err = await res.json();
+        alert(`Failed to seed: ${err.detail}`);
+      }
+    } catch (e) {
+      alert("Error connecting to server to seed database.");
+    } finally {
+      setIsSeeding(false);
+    }
+  };
 
   useEffect(() => {
     if (isSimulating) {
@@ -905,6 +924,23 @@ function App() {
                     >
                       {isSimulating ? "Stop Simulation" : "Start Continuous Flow"}
                     </button>
+                    
+                    {user.role === 'admin' && (
+                      <button 
+                        type="button" 
+                        onClick={handleSeed}
+                        disabled={isSeeding}
+                        className="btn-primary"
+                        style={{ 
+                          flex: '1 1 100%', 
+                          marginTop: '8px',
+                          backgroundColor: 'var(--success)',
+                          borderColor: 'var(--success)'
+                        }}
+                      >
+                        {isSeeding ? "Seeding Database..." : "Seed Historical Data (Reset DB)"}
+                      </button>
+                    )}
                   </div>
                 </form>
               </div>
